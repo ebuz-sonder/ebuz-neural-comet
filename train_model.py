@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import joblib
 import json
+import structlog
 from pathlib import Path
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
@@ -11,6 +12,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import GridSearchCV
 
+log = structlog.get_logger()
+
 cv_search_prefix = 'model_cv_search__'
 config = {
     'data_path': './data/pos_neg_reviews.csv',
@@ -19,6 +22,7 @@ config = {
     f'{cv_search_prefix}preprocess__text__stop_words': 'english'
 }
 config.update(os.environ)
+log.debug(f'script config: {config}')
 
 data = pd.read_csv(config['data_path'])
 data_field = 'text_data'
@@ -58,6 +62,7 @@ for k, v in config.items():
         except:
             grid_params[k_sub] = (v,)
 
+log.debug(f'grid scearch config: {grid_params}')
 grid_search = GridSearchCV(pipeline, grid_params,
                            scoring='f1_macro',
                            n_jobs=-1, verbose=1)
@@ -68,6 +73,7 @@ test_metrics = classification_report(y_test, grid_search.predict(X_test),
                                 output_dict=True)
 
 
+log.debug(f'saving artifacts')
 model_artifact_path = f"{config['artifacts_save_path']}model.joblib"
 Path(model_artifact_path).parent.mkdir(parents=True, exist_ok=True)
 with open(model_artifact_path, 'wb') as of:
