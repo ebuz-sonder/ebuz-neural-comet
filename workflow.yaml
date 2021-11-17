@@ -1,0 +1,50 @@
+defaults:
+  resources:
+    instance-type: C4
+jobs:
+  CloneRepo:
+    uses: git-checkout@v1
+    with:
+      url: https://gitlab.com/sondermind/data-science/ebuz-neural-comet
+      username: __token__
+      password: secret:gitlab_ebuz_api
+    outputs:
+      repo:
+        type: volume
+  TrainModel:
+    inputs:
+      repo: CloneRepo.outputs.repo
+      trainingData:
+        type: dataset
+        with:
+          ref: dsrk30bjsodpk1y
+    outputs:
+      artifacts:
+        type: dataset
+        with:
+          ref: dstlt6g5zj80i6z
+    uses: script@v1
+    env:
+      artifacts_save_path: /outputs/artifacts/
+      data_path: /inputs/trainingData/pos_neg_reviews.csv
+    with:
+      image: paperspace/transformers-gpu:0.4.0
+      script: |-
+        ls /inputs/trainingData/
+        cd /inputs/repo
+        pip3 install -r requirements.txt
+        python3 train_model.py
+    needs:
+      - CloneRepo
+  UploadModel:
+    inputs:
+      artifacts: TrainModel.outputs.artifacts
+    outputs:
+      model-id:
+        type: string
+    uses: create-model@v1
+    needs:
+      - TrainModel
+    with:
+      name: predictor-model
+      type: Custom
