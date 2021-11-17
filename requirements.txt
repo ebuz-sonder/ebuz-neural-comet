@@ -1,0 +1,4 @@
+structlog
+scikit-learn
+pandas
+
