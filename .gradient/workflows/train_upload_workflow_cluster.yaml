@@ -1,6 +1,6 @@
 defaults:
   resources:
-    instance-type: C4
+    instance-type: c5.xlarge
 jobs:
   CloneRepo:
     uses: git-checkout@v1
